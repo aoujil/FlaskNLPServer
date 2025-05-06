@@ -1,9 +1,10 @@
-
 from flask import Flask, request, jsonify
 import language_tool_python
 
 app = Flask(__name__)
-tool = language_tool_python.LanguageTool('fr')  # الفرنسية
+
+# استخدام الخادم العام لـ LanguageTool
+tool = language_tool_python.LanguageToolPublicAPI('fr')
 
 @app.route('/correct', methods=['POST'])
 def correct_text():
@@ -20,4 +21,6 @@ def correct_text():
     })
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000)
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)

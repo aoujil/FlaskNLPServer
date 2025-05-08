@@ -1,26 +1,33 @@
 from flask import Flask, request, jsonify
-import language_tool_python
+from flask_cors import CORS
+from pix2tex.cli import LatexOCR
+from PIL import Image
+import io
 
 app = Flask(__name__)
+CORS(app)
 
-# استخدام الخادم العام لـ LanguageTool
-tool = language_tool_python.LanguageToolPublicAPI('fr')
+@app.route('/predict', methods=['POST'])
+def predict():
+    try:
+        if 'image' not in request.files:
+            return jsonify({"error": "No image part in the request"}), 400
 
-@app.route('/correct', methods=['POST'])
-def correct_text():
-    data = request.get_json()
-    text = data.get("text", "")
+        file = request.files['image']
+        image = Image.open(file.stream).convert("RGB")
 
-    matches = tool.check(text)
-    corrected_text = language_tool_python.utils.correct(text, matches)
+        # تحديد حجم الصورة
+        max_size = (512, 512)
+        image.thumbnail(max_size, Image.Resampling.LANCZOS)
 
-    return jsonify({
-        "original": text,
-        "corrected": corrected_text,
-        "errors": len(matches)
-    })
+        model = LatexOCR()
+        result = model(image)
+
+        return jsonify({"latex": result}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    import os
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host='0.0.0.0', port=5000)
+

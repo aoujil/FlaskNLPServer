@@ -22,7 +22,7 @@ def predict():
 
         model = LatexOCR()
         result = model(image)
-
+        print(result)
         return jsonify({"latex": result}), 200
 
     except Exception as e:
